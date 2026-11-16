@@ -1,20 +1,1435 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <!-- meta tags, links to css, etc. -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Final Project</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <meta name="theme-color" content="#000000">
+    <title>Character Creator | 2024 D&amp;D</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-06] Intent: Keep choice controls and the continue button visible while details scroll independently. -->
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #point-buy-page,
+        #backstory-page,
+        #character-sheet-page {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Match ability-score creation to the black-and-white character builder palette. */
+        #point-buy-page {
+            --ability-control-size: 2.5rem;
+            --ability-control-gap: 0.6rem;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #point-buy-page h1,
+        #point-buy-page legend,
+        #point-buy-page label,
+        #point-buy-page .form-check-label {
+            color: #f8f9fa;
+        }
+
+        #point-buy-page .text-body-secondary {
+            color: #adb5bd !important;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Style the 2024 background bonus choices and distinguish boosted scores. */
+        #proficiency-modal #background-ability-bonuses {
+            margin-bottom: 1rem;
+            padding: clamp(0.75rem, 2vw, 1.25rem);
+            border: 1px solid #f8f9fa;
+            border-radius: 0.75rem;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #proficiency-modal #background-ability-bonuses .text-body-secondary {
+            color: #adb5bd !important;
+        }
+
+        #proficiency-modal .background-bonus-select {
+            border-color: #f8f9fa;
+            background-color: #fff;
+            color: #000;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Give proficiency choices the same crisp black-and-white visual system as the builder. */
+        #proficiency-modal .modal-content {
+            max-height: calc(100dvh - 1.5rem);
+            border: 1px solid #f8f9fa;
+            border-radius: 1rem;
+            background: #000;
+            color: #f8f9fa;
+            box-shadow: 0 1rem 3rem rgb(0 0 0 / 55%);
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Extend the monochrome theme across dialogs and the remaining character workflow screens. */
+        #selection-modal .modal-content,
+        #species-lineage-modal .modal-content,
+        #point-buy-info .modal-content,
+        #level-up-modal .modal-content,
+        #level-down-modal .modal-content {
+            max-height: calc(100dvh - 1.5rem);
+            border: 1px solid #f8f9fa;
+            border-radius: 1rem;
+            background: #000;
+            color: #f8f9fa;
+            box-shadow: 0 1rem 3rem rgb(0 0 0 / 55%);
+        }
+
+        #proficiency-modal .modal-dialog,
+        #selection-modal .modal-dialog,
+        #species-lineage-modal .modal-dialog,
+        #point-buy-info .modal-dialog {
+            max-width: min(56rem, calc(100vw - 2rem));
+        }
+
+        #selection-modal .modal-header,
+        #selection-modal .modal-footer,
+        #species-lineage-modal .modal-header,
+        #species-lineage-modal .modal-footer,
+        #point-buy-info .modal-header,
+        #point-buy-info .modal-footer,
+        #level-up-modal .modal-header,
+        #level-up-modal .modal-footer,
+        #level-down-modal .modal-header,
+        #level-down-modal .modal-footer {
+            border-color: #495057;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #selection-modal .modal-header .btn-close,
+        #species-lineage-modal .modal-header .btn-close,
+        #point-buy-info .modal-header .btn-close,
+        #level-up-modal .modal-header .btn-close,
+        #level-down-modal .modal-header .btn-close {
+            filter: invert(1) grayscale(1);
+        }
+
+        #selection-modal .modal-body,
+        #species-lineage-modal .modal-body,
+        #point-buy-info .modal-body,
+        #level-up-modal .modal-body,
+        #level-down-modal .modal-body {
+            color: #f8f9fa;
+            scrollbar-color: #adb5bd #111;
+            scrollbar-width: thin;
+        }
+
+        #selection-options .choice-option,
+        #species-lineage-options .choice-option {
+            padding: 1rem;
+            border: 1px solid #6c757d;
+            border-radius: 0.75rem;
+            background: #080808;
+        }
+
+        #selection-options .choice-option + .choice-option,
+        #species-lineage-options .choice-option + .choice-option {
+            margin-top: 0.75rem;
+        }
+
+        #selection-options .choice-option h3,
+        #selection-options details summary,
+        #species-lineage-options .choice-option h3,
+        #species-lineage-options details summary {
+            color: #f8f9fa;
+        }
+
+        #selection-options .choice-option details > div,
+        #species-lineage-options .choice-option details > div {
+            color: #adb5bd;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-11] Intent: Make nested API feature and trait disclosures easy to scan in choice details. */
+        #selection-options .selection-detail-disclosure,
+        #species-lineage-options .selection-detail-disclosure {
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid #343a40;
+            border-radius: 0.5rem;
+            background: #050505;
+        }
+
+        #selection-options .selection-detail-disclosure > summary,
+        #species-lineage-options .selection-detail-disclosure > summary {
+            color: #f8f9fa;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #selection-options .selection-detail-disclosure > div,
+        #species-lineage-options .selection-detail-disclosure > div {
+            color: #adb5bd;
+        }
+
+        #selection-options .choice-option details li,
+        #species-lineage-options .choice-option details li {
+            margin-top: 0.25rem;
+        }
+
+        #selection-options .btn-primary,
+        #selection-modal .btn-primary,
+        #species-lineage-modal .btn-primary,
+        #point-buy-info .btn-primary {
+            border-color: #f8f9fa;
+            background: #f8f9fa;
+            color: #000;
+            font-weight: 700;
+        }
+
+        #selection-options .btn-primary:hover:not(:disabled),
+        #selection-modal .btn-primary:hover:not(:disabled),
+        #species-lineage-modal .btn-primary:hover:not(:disabled),
+        #point-buy-info .btn-primary:hover:not(:disabled) {
+            border-color: #ced4da;
+            background: #ced4da;
+        }
+
+        #proficiency-modal .modal-header,
+        #proficiency-modal .modal-footer {
+            flex-shrink: 0;
+            border-color: #495057;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #proficiency-modal .modal-header {
+            padding: 1.25rem 1.5rem;
+        }
+
+        #proficiency-modal .modal-header .btn-close {
+            filter: invert(1) grayscale(1);
+        }
+
+        #proficiency-modal .modal-body {
+            min-height: 0;
+            padding: 1.25rem 1.5rem;
+            color: #f8f9fa;
+            scrollbar-color: #adb5bd #111;
+            scrollbar-width: thin;
+        }
+
+        #proficiency-modal #choice-prompt,
+        #proficiency-modal #choice-status,
+        #proficiency-modal .text-body-secondary {
+            color: #adb5bd !important;
+        }
+
+        #proficiency-modal #choice-groups > [class*="col-"] {
+            min-width: 0;
+        }
+
+        #proficiency-modal #choice-groups fieldset {
+            height: 100%;
+            border-color: #6c757d !important;
+            border-radius: 0.75rem;
+            background: #080808;
+        }
+
+        #proficiency-modal #choice-groups legend {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        #proficiency-modal #choice-groups .form-check {
+            padding: 0.45rem 0 0.45rem 1.75rem;
+            border-top: 1px solid #212529;
+        }
+
+        #proficiency-modal #choice-groups .form-check-input {
+            margin-top: 0.2rem;
+            border-color: #f8f9fa;
+            background-color: #000;
+            accent-color: #fff;
+        }
+
+        #proficiency-modal #choice-groups .form-check-input:checked {
+            border-color: #fff;
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+        }
+
+        #proficiency-modal #choice-groups .form-check-input:focus {
+            border-color: #fff;
+            box-shadow: 0 0 0 0.2rem rgb(255 255 255 / 25%);
+        }
+
+        #proficiency-modal #choice-groups .form-check-input:disabled + .form-check-label {
+            color: #6c757d;
+        }
+
+        #proficiency-modal .btn-outline-secondary {
+            border-color: #adb5bd;
+            color: #f8f9fa;
+        }
+
+        #selection-modal .btn-outline-secondary,
+        #point-buy-info .btn-outline-secondary {
+            border-color: #adb5bd;
+            color: #f8f9fa;
+        }
+
+        #selection-modal .btn-outline-secondary:hover:not(:disabled),
+        #point-buy-info .btn-outline-secondary:hover:not(:disabled) {
+            background: #f8f9fa;
+            color: #000;
+        }
+
+        #proficiency-modal .btn-outline-secondary:hover:not(:disabled) {
+            background: #f8f9fa;
+            color: #000;
+        }
+
+        #proficiency-modal #finish-button {
+            border-color: #f8f9fa;
+            background: #f8f9fa;
+            color: #000;
+            font-weight: 700;
+        }
+
+        #proficiency-modal #finish-button:hover:not(:disabled) {
+            border-color: #ced4da;
+            background: #ced4da;
+        }
+
+        #proficiency-modal #finish-button:disabled {
+            border-color: #495057;
+            background: #343a40;
+            color: #adb5bd;
+        }
+
+        @media (max-width: 575.98px) {
+            #proficiency-modal .modal-header,
+            #proficiency-modal .modal-body {
+                padding: 1rem;
+            }
+
+            #proficiency-modal #background-ability-bonuses .row > [class*="col-"] {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            #proficiency-modal .modal-footer {
+                gap: 0.5rem;
+            }
+
+            #proficiency-modal #choice-status {
+                flex: 1 0 100%;
+            }
+        }
+
+        #point-buy-page .ability-score-number.background-bonus-one {
+            color: #0b5ed7;
+        }
+
+        #point-buy-page .ability-score-number.background-bonus-two {
+            color: #6f42c1;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Display draggable Standard Array scores above the ability grid. */
+        #point-buy-page #standard-array-scores {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #point-buy-page .standard-array-score {
+            display: grid;
+            width: 2.75rem;
+            height: 2.5rem;
+            place-items: center;
+            border: 1px solid #f8f9fa;
+            border-radius: 0.5rem;
+            background: #fff;
+            color: #000;
+            font-size: 1.35rem;
+            font-weight: 700;
+            cursor: grab;
+        }
+
+        #point-buy-page .standard-array-score:active {
+            cursor: grabbing;
+        }
+
+        #point-buy-page .standard-array-score.is-assigned {
+            border-style: dashed;
+            opacity: 0.65;
+        }
+
+        #point-buy-page .standard-array-score.is-selected {
+            outline: 3px solid #adb5bd;
+            outline-offset: 2px;
+        }
+
+        #point-buy-page .ability-score-value[role="button"] {
+            cursor: pointer;
+        }
+
+        #point-buy-page .ability-score-value.is-empty {
+            background: #dee2e6;
+            color: #495057;
+            font-size: 1.5rem;
+        }
+
+        #point-buy-page .ability-score-value.is-drop-target {
+            outline: 3px solid #adb5bd;
+            outline-offset: 3px;
+        }
+
+        #point-buy-page #points-remaining {
+            color: #fff;
+        }
+
+        #point-buy-page #ability-scores {
+            width: 100%;
+            min-height: 0;
+            margin: 0;
+            padding: clamp(0.75rem, 2vw, 1.5rem);
+            align-content: flex-start;
+            border: 1px solid #f8f9fa;
+            border-radius: 1rem;
+            overflow: auto;
+            overscroll-behavior: contain;
+        }
+
+        #point-buy-page .ability-score-column {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+        }
+
+        @media (max-width: 575.98px) {
+            #point-buy-page {
+                --ability-control-size: 1.55rem;
+                --ability-control-gap: 0.2rem;
+            }
+
+            #point-buy-page .ability-score-card {
+                min-height: 10rem;
+                padding: 0.5rem 0.3rem;
+            }
+
+            #point-buy-page #standard-array-scores {
+                gap: 0.35rem;
+            }
+
+            #point-buy-page .standard-array-score {
+                width: 2.5rem;
+                height: 2.4rem;
+            }
+
+            #point-buy-page .ability-score-display {
+                gap: 0.35rem;
+            }
+
+            #point-buy-page .ability-score-value {
+                height: 3.5rem;
+            }
+
+            #point-buy-page .ability-score-controls {
+                gap: var(--ability-control-gap);
+                padding-top: 0.25rem;
+            }
+
+            #point-buy-page .ability-score-controls .btn {
+                width: var(--ability-control-size);
+                height: var(--ability-control-size);
+            }
+        }
+
+        #point-buy-page .ability-score-card {
+            height: 100%;
+            min-height: 10rem;
+            padding: 1rem 0.75rem;
+            border: 1px solid #f8f9fa;
+            border-radius: 0.85rem;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Align ability score tiles above their controls and improve abbreviation readability. */
+        #point-buy-page .ability-score-display {
+            display: flex;
+            position: relative;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        #point-buy-page .ability-score-abbreviation {
+            position: absolute;
+            top: 50%;
+            left: calc(50% - (3 * var(--ability-control-size) + 2 * var(--ability-control-gap)) / 2 - 1.5rem);
+            writing-mode: vertical-rl;
+            transform: translateY(-50%) rotate(180deg);
+            color: #f8f9fa;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        #point-buy-page .ability-score-value {
+            display: grid;
+            position: relative;
+            width: calc(3 * var(--ability-control-size) + 2 * var(--ability-control-gap));
+            height: clamp(4rem, 7vw, 5.5rem);
+            margin-inline: auto;
+            place-items: center;
+            border-radius: 0.5rem;
+            background: #fff;
+            color: #000;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Show the calculated ability modifier in the score tile's upper-right corner. */
+        #point-buy-page .ability-score-modifier {
+            position: absolute;
+            top: 0.3rem;
+            right: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        #point-buy-page .ability-score-number {
+            grid-area: 1 / 1;
+        }
+
+        #point-buy-page .ability-score-value select {
+            width: 100%;
+            height: 100%;
+            padding: 0.25rem;
+            border: 0;
+            background: #fff;
+            color: #000;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        #point-buy-page .ability-score-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--ability-control-gap);
+            padding-top: 0.25rem;
+        }
+
+        #point-buy-page .ability-score-controls .btn {
+            display: grid;
+            width: var(--ability-control-size);
+            height: var(--ability-control-size);
+            padding: 0;
+            place-items: center;
+            border-color: #f8f9fa;
+            color: #f8f9fa;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        #point-buy-page .ability-score-controls .btn:hover:not(:disabled) {
+            background: #fff;
+            color: #000;
+        }
+
+        #point-buy-page .ability-score-controls .btn:disabled {
+            border-color: #6c757d;
+            color: #6c757d;
+        }
+
+        #point-buy-page .btn-outline-primary {
+            border-color: #f8f9fa;
+            color: #f8f9fa;
+        }
+
+        #point-buy-page .btn-check:checked + .btn-outline-primary,
+        #point-buy-page .btn-outline-primary:hover {
+            background: #f8f9fa;
+            color: #000;
+        }
+
+        #point-buy-page #point-buy-status {
+            color: #adb5bd !important;
+        }
+
+        #character-page {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #character-page > header,
+        #character-page > .d-flex:last-child {
+            flex-shrink: 0;
+        }
+
+        #character-page > section,
+        #character-page > section > [class*="col-"],
+        #character-page .card,
+        #character-page .card-body {
+            min-height: 0;
+        }
+
+        #character-page > section {
+            flex: 1 1 0;
+            overflow: hidden;
+            margin-top: 0;
+        }
+
+        #character-page > section > [class*="col-"] {
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        #character-page .card,
+        #character-page .card-body {
+            overflow: hidden;
+        }
+
+        #character-page .choice-card-footer {
+            flex: 0 0 auto;
+            max-height: 80%;
+            padding: 0.75rem;
+            overflow: hidden;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Keep card titles at top-left, reserve central art space, and anchor controls and information at the bottom. */
+        #character-page .choice-card {
+            border-color: #495057;
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #character-page .choice-card-heading {
+            flex: 0 0 auto;
+            padding: 1rem 1rem 0.25rem;
+            border: 0;
+            background: #000;
+        }
+
+        #character-page .choice-card-heading .card-title {
+            margin: 0;
+            color: #fff;
+        }
+
+        #character-page .choice-image-space {
+            flex: 1 1 auto;
+            min-height: 6rem;
+            margin: 0.25rem 1rem;
+            border-radius: 0.5rem;
+            background: #d3d3d3;
+        }
+
+        #character-page .choice-card-footer {
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #character-page .choice-control-panel {
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+
+        #character-page .choice-control-panel .choice-icon-group {
+            align-items: flex-end;
+            flex-shrink: 0;
+            margin-top: 0.5rem;
+        }
+
+        #character-page .choice-control-panel .btn-outline-light {
+            white-space: nowrap;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-11] Intent: Keep lineage selection beneath species info without reserving vertical space from the image. */
+        #character-page .species-info-controls {
+            position: relative;
+        }
+
+        #character-page .species-lineage-slot {
+            position: absolute;
+            z-index: 1;
+            top: calc(100% + 0.5rem);
+            right: 3.25rem;
+            left: 0;
+        }
+
+        #character-page .species-lineage-button {
+            width: fit-content;
+            max-width: min(100%, 14rem);
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        #character-page .species-lineage-button.is-unavailable {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #character-page .choice-control-panel .choice-icon-button {
+            display: grid;
+            width: 2.75rem;
+            height: 2.75rem;
+            padding: 0.25rem;
+            place-items: center;
+        }
+
+        #character-page .choice-control-panel .choice-icon-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Show verbose selection details in a viewport-bounded, scrollable tooltip instead of expanding the card. */
+        #choice-info-tooltip {
+            position: fixed;
+            z-index: 1090;
+            width: min(24rem, calc(100vw - 1rem));
+            max-height: min(55vh, 26rem);
+            overflow: hidden;
+            border: 1px solid #f8f9fa;
+            border-radius: 0.75rem;
+            background: #000;
+            color: #f8f9fa;
+            box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 55%);
+        }
+
+        #choice-info-tooltip .choice-info-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #495057;
+        }
+
+        #choice-info-tooltip .choice-info-content {
+            max-height: calc(min(55vh, 26rem) - 3rem);
+            overflow-y: auto;
+            padding: 0.75rem;
+            overscroll-behavior: contain;
+            scrollbar-color: #adb5bd #111;
+            scrollbar-width: thin;
+        }
+
+        #choice-info-tooltip .choice-info-header .btn-close {
+            filter: invert(1) grayscale(1);
+        }
+
+        #choice-info-tooltip .choice-info-content > :last-child {
+            margin-bottom: 0;
+        }
+
+        #character-page .choice-card .text-body-secondary {
+            color: #adb5bd !important;
+        }
+
+        #character-page .choice-options-list .choice-option {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+        }
+
+        #character-page .choice-options-list .choice-option + .choice-option {
+            margin-top: 0.75rem;
+        }
+
+        #character-page .choice-options-list details {
+            margin-top: 0.5rem;
+        }
+
+        #backstory-page,
+        #character-sheet-page {
+            background: #000;
+            color: #f8f9fa;
+        }
+
+        #backstory-page h1,
+        #backstory-page h2,
+        #backstory-page label,
+        #backstory-page .form-check-label,
+        #character-sheet-page h1,
+        #character-sheet-page h2,
+        #character-sheet-page h3,
+        #character-sheet-page .text-body-secondary {
+            color: #f8f9fa !important;
+        }
+
+        #backstory-page .text-body-secondary,
+        #backstory-page .text-warning-emphasis {
+            color: #adb5bd !important;
+        }
+
+        #backstory-page .card,
+        #character-sheet-page .character-sheet-banner,
+        #character-sheet-page .character-sheet-panel {
+            border: 1px solid #f8f9fa;
+            border-radius: 0.85rem;
+            background: #050505;
+            color: #f8f9fa;
+            box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 30%);
+        }
+
+        #backstory-page .card-body,
+        #character-sheet-page .character-sheet-panel .card-body {
+            padding: clamp(1rem, 2vw, 1.5rem);
+        }
+
+        #backstory-page .form-control,
+        #backstory-page .form-select {
+            border-color: #6c757d;
+            background-color: #fff;
+            color: #000;
+        }
+
+        #backstory-page .form-control::placeholder {
+            color: #6c757d;
+        }
+
+        #backstory-page .form-control:focus,
+        #backstory-page .form-select:focus {
+            border-color: #fff;
+            box-shadow: 0 0 0 0.2rem rgb(255 255 255 / 25%);
+        }
+
+        #backstory-page .form-check-input {
+            border-color: #f8f9fa;
+            background-color: #000;
+            accent-color: #fff;
+        }
+
+        #backstory-page .form-check-input:checked {
+            border-color: #fff;
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+        }
+
+        #backstory-page .form-check-input:focus {
+            border-color: #fff;
+            box-shadow: 0 0 0 0.2rem rgb(255 255 255 / 25%);
+        }
+
+        #backstory-page .btn-primary,
+        #character-sheet-page .btn-primary {
+            border-color: #f8f9fa;
+            background: #f8f9fa;
+            color: #000;
+            font-weight: 700;
+        }
+
+        #backstory-page .btn-primary:hover:not(:disabled),
+        #character-sheet-page .btn-primary:hover:not(:disabled) {
+            border-color: #ced4da;
+            background: #ced4da;
+        }
+
+        #backstory-page .btn-outline-secondary,
+        #character-sheet-page .btn-outline-secondary {
+            border-color: #adb5bd;
+            color: #f8f9fa;
+        }
+
+        #backstory-page .btn-outline-secondary:hover:not(:disabled),
+        #character-sheet-page .btn-outline-secondary:hover:not(:disabled) {
+            background: #f8f9fa;
+            color: #000;
+        }
+
+        .character-sheet-banner {
+            padding: clamp(1rem, 3vw, 1.5rem);
+        }
+
+        #sheet-character-name {
+            font-size: clamp(1.8rem, 4vw, 2.75rem);
+            font-weight: 700;
+        }
+
+        #sheet-character-summary {
+            font-size: 1rem;
+        }
+
+        .character-sheet-panel {
+            height: 100%;
+        }
+
+        .character-sheet-panel .card-title {
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #6c757d;
+            font-weight: 700;
+        }
+
+        .sheet-combat-stat {
+            height: 100%;
+            padding: 0.75rem;
+            border: 1px solid #6c757d;
+            border-radius: 0.5rem;
+            background: #111;
+            color: #f8f9fa;
+        }
+
+        .sheet-combat-stat .h5 {
+            color: #fff;
+            font-size: 1.35rem;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Make armor recommendation and rules easy to scan on the final sheet. */
+        .sheet-armor-guidance {
+            padding: 0.85rem;
+            border: 1px solid #6c757d;
+            border-radius: 0.65rem;
+            background: #111;
+            color: #f8f9fa;
+        }
+
+        .sheet-armor-guidance h3 {
+            color: #fff;
+        }
+
+        /* [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Give class advancement its own clear panel on the final sheet. */
+        .sheet-level-up {
+            padding: 0.85rem;
+            border: 1px solid #6c757d;
+            border-radius: 0.65rem;
+            background: #111;
+            color: #f8f9fa;
+        }
+
+        .sheet-level-up h3 {
+            color: #fff;
+        }
+
+        .sheet-skill-list {
+            columns: 2 12rem;
+            column-gap: 1.5rem;
+        }
+
+        .sheet-skill-list li {
+            break-inside: avoid;
+        }
+
+        @media (min-width: 768px) {
+            #character-page > section > [class*="col-"],
+            #character-page .card {
+                height: 100%;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            #character-page > section {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                scroll-snap-type: x mandatory;
+                overscroll-behavior-x: contain;
+            }
+
+            #character-page .card {
+                height: 100%;
+            }
+
+            #character-page > section > [class*="col-"] {
+                flex: 0 0 86%;
+                max-width: 86%;
+                scroll-snap-align: start;
+            }
+        }
+
+        @media print {
+            html,
+            body {
+                height: auto;
+                overflow: visible;
+            }
+
+            body > main:not(#character-sheet-page),
+            #character-sheet-page > header button,
+            #character-sheet-page > div:last-child {
+                display: none !important;
+            }
+
+            #character-sheet-page {
+                display: block !important;
+                height: auto;
+                overflow: visible;
+                padding: 0 !important;
+            }
+
+            #character-sheet-content .card {
+                break-inside: avoid;
+            }
+
+            #character-sheet-page {
+                background: #fff;
+                color: #111;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .character-sheet-banner,
+            .character-sheet-panel,
+            .sheet-combat-stat,
+            .sheet-armor-guidance,
+            .sheet-level-up {
+                border-color: #555 !important;
+                background: #fff !important;
+                color: #111 !important;
+                box-shadow: none;
+            }
+
+            #character-sheet-page h1,
+            #character-sheet-page h2,
+            #character-sheet-page h3,
+            #character-sheet-page .text-body-secondary,
+            .sheet-combat-stat .h5,
+            .sheet-armor-guidance h3 {
+                color: #111 !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
+    <main id="character-page" class="container-fluid min-vh-100 d-flex flex-column p-3 p-lg-4">
+        <header class="text-center mb-2">
+            <p class="text-uppercase fw-semibold mb-1">A character creation tool · 2024 rules</p>
+            <h1 class="h2 mb-1">Build your character</h1>
+        </header>
 
-    <!-- visible content goes here -->
-	<h1>Final Project</h1>
-	<p>See README.md for info</p>
+        <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Keep choice headings above reserved artwork space and place selection controls and expandable details at each card's bottom. -->
+        <section class="row g-3 flex-grow-1 align-items-stretch" aria-label="Character choices">
+            <div class="col-12 col-md-4 d-flex">
+                <article class="card choice-card flex-fill">
+                    <header class="card-header choice-card-heading">
+                        <h2 class="h4 card-title">Species</h2>
+                    </header>
+                    <div class="choice-image-space d-flex align-items-center justify-content-center text-center px-3" id="species-image-placeholder" role="img" aria-label="Species image placeholder">Species image placeholder</div>
+                    <div class="card-body choice-card-footer d-flex flex-column">
+                        <select id="species-select" class="d-none" aria-hidden="true" tabindex="-1" disabled>
+                            <option value="">Loading species…</option>
+                        </select>
+                        <div class="choice-control-panel d-flex flex-column gap-2">
+                            <div class="min-w-0">
+                                <button class="btn btn-outline-light btn-sm" type="button" data-open-choice="species" disabled>Select species</button>
+                                <span id="species-selected-name" class="d-block small mt-1 text-body-secondary">No species selected</span>
+                            </div>
+                            <div class="species-info-controls">
+                                <button class="btn btn-link link-light align-self-start p-0" type="button" data-choice-info="species" aria-haspopup="dialog" aria-expanded="false" aria-controls="choice-info-tooltip" disabled>View info</button>
+                                <div class="species-lineage-slot">
+                                    <button id="species-lineage-button" class="btn btn-outline-light btn-sm align-self-start species-lineage-button is-unavailable" type="button" aria-hidden="true" disabled>Choose lineage</button>
+                                </div>
+                            </div>
+                            <div class="choice-icon-group d-flex flex-column gap-1" role="group" aria-label="Randomize species">
+                                <button class="btn btn-outline-light rounded-circle choice-icon-button" id="species-random" type="button" aria-label="Randomize species" disabled>
+                                    <img src="random.png" alt="">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
 
-    <!-- load javascript after the page elements render -->
+            <div class="col-12 col-md-4 d-flex">
+                <article class="card choice-card flex-fill">
+                    <header class="card-header choice-card-heading">
+                        <h2 class="h4 card-title">Class</h2>
+                    </header>
+                    <div class="choice-image-space d-flex align-items-center justify-content-center text-center px-3" id="class-image-placeholder" role="img" aria-label="Class image placeholder">Class image placeholder</div>
+                    <div class="card-body choice-card-footer d-flex flex-column">
+                        <select id="class-select" class="d-none" aria-hidden="true" tabindex="-1" disabled>
+                            <option value="">Loading classes…</option>
+                        </select>
+                        <div class="choice-control-panel d-flex flex-column gap-2">
+                            <div class="min-w-0">
+                                <button class="btn btn-outline-light btn-sm" type="button" data-open-choice="class" disabled>Select class</button>
+                                <span id="class-selected-name" class="d-block small mt-1 text-body-secondary">No class selected</span>
+                            </div>
+                            <button class="btn btn-link link-light align-self-start p-0" type="button" data-choice-info="class" aria-haspopup="dialog" aria-expanded="false" aria-controls="choice-info-tooltip" disabled>View info</button>
+                            <div class="choice-icon-group d-flex flex-column gap-1" role="group" aria-label="Randomize class">
+                                <button class="btn btn-outline-light rounded-circle choice-icon-button" id="class-random" type="button" aria-label="Randomize class" disabled>
+                                    <img src="random.png" alt="">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-12 col-md-4 d-flex">
+                <article class="card choice-card flex-fill">
+                    <header class="card-header choice-card-heading">
+                        <h2 class="h4 card-title">Background</h2>
+                    </header>
+                    <div class="choice-image-space d-flex align-items-center justify-content-center text-center px-3" id="background-image-placeholder" role="img" aria-label="Background image placeholder">Background image placeholder</div>
+                    <div class="card-body choice-card-footer d-flex flex-column">
+                        <select id="background-select" class="d-none" aria-hidden="true" tabindex="-1" disabled>
+                            <option value="">Loading backgrounds…</option>
+                        </select>
+                        <div class="choice-control-panel d-flex flex-column gap-2">
+                            <div class="min-w-0">
+                                <button class="btn btn-outline-light btn-sm" type="button" data-open-choice="background" disabled>Select background</button>
+                                <span id="background-selected-name" class="d-block small mt-1 text-body-secondary">No background selected</span>
+                            </div>
+                            <button class="btn btn-link link-light align-self-start p-0" type="button" data-choice-info="background" aria-haspopup="dialog" aria-expanded="false" aria-controls="choice-info-tooltip" disabled>View info</button>
+                            <div class="choice-icon-group d-flex flex-column gap-1" role="group" aria-label="Randomize background">
+                                <button class="btn btn-outline-light rounded-circle choice-icon-button" id="background-random" type="button" aria-label="Randomize background" disabled>
+                                    <img src="random.png" alt="">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <div class="d-flex justify-content-center pt-3">
+            <button id="next-button" class="btn btn-secondary btn-lg" type="button" disabled>
+                Next: Choose proficiencies
+            </button>
+        </div>
+    </main>
+
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Keep selection details accessible in a compact overlay without changing the card layout. -->
+    <section id="choice-info-tooltip" class="d-none" role="dialog" aria-label="Selection information" aria-hidden="true">
+        <div class="choice-info-header">
+            <h2 id="choice-info-title" class="h6 mb-0">Selection information</h2>
+            <button id="choice-info-close" class="btn-close" type="button" aria-label="Close information"></button>
+        </div>
+        <div id="choice-info-content" class="choice-info-content" aria-live="polite"></div>
+    </section>
+
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Present API-backed choice options only after a player opens the corresponding selector. -->
+    <div class="modal fade" id="selection-modal" tabindex="-1" aria-labelledby="selection-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="selection-modal-title">Choose an option</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="selection-options" class="choice-options-list" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-11] Intent: Let players inspect and choose API-provided species lineages separately from general species details. -->
+    <div class="modal fade" id="species-lineage-modal" tabindex="-1" aria-labelledby="species-lineage-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="species-lineage-title">Choose a lineage</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-body-secondary">Choose a lineage to add it to your character. Expand “Find more” to read its API details.</p>
+                    <div id="species-lineage-options" class="choice-options-list" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main id="point-buy-page" class="container-fluid min-vh-100 d-none flex-column p-3 p-lg-4">
+        <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <p class="text-uppercase fw-semibold mb-1">Character creation · Step 2</p>
+                <h1 class="h2 mb-0">Ability scores</h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <output id="points-remaining" class="fs-5 fw-semibold" aria-live="polite">Points remaining: 27</output>
+                <button id="point-buy-info-button" class="btn btn-outline-secondary rounded-circle" type="button" aria-label="Point buy and race rules">i</button>
+            </div>
+        </header>
+
+        <!-- [AI-Assisted: Copilot SDK | 2026-11-06] Intent: Let players switch between point buy and standard array before assigning scores. -->
+        <fieldset class="mb-3">
+            <legend class="fs-6 fw-semibold">Ability score method</legend>
+            <div class="btn-group" role="group" aria-label="Choose ability score method">
+                <input class="btn-check" type="radio" name="score-method" id="method-point-buy" value="point-buy" checked>
+                <label class="btn btn-outline-primary" for="method-point-buy">Point Buy</label>
+                <input class="btn-check" type="radio" name="score-method" id="method-standard-array" value="standard-array">
+                <label class="btn btn-outline-primary" for="method-standard-array">Standard Array</label>
+            </div>
+        </fieldset>
+        <p id="score-method-description" class="text-body-secondary">Spend 27 points on scores 8 to 15. Use the i buttons for ability and skill details.</p>
+        <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Provide a top row of Standard Array blocks to drag into ability score tiles. -->
+        <div id="standard-array-scores" class="d-none" role="group" aria-label="Standard Array score blocks"></div>
+        <section id="ability-scores" class="row g-3 flex-grow-1" aria-label="Ability scores"></section>
+        <p id="point-buy-status" class="mt-3 mb-0 text-body-secondary" role="status" aria-live="polite"></p>
+        <div class="d-flex flex-wrap justify-content-between gap-2 mt-4">
+            <button id="back-to-choices" class="btn btn-outline-secondary" type="button">Back to character choices</button>
+            <button id="finish-point-buy" class="btn btn-primary" type="button">Continue to backstory</button>
+        </div>
+    </main>
+
+    <!-- [AI-Generated: Copilot SDK | 2026-11-06] Intent: Collect character identity, armor, and backstory before generating the sheet. -->
+    <main id="backstory-page" class="container-fluid d-none p-3 p-lg-4">
+        <header class="mb-4">
+            <p class="text-uppercase fw-semibold mb-1">Character creation · Step 3</p>
+            <h1 class="h2 mb-1">Character details &amp; backstory</h1>
+            <p class="text-body-secondary mb-0">Name your character, choose what they wear, and add the details that make them yours.</p>
+        </header>
+
+        <form id="backstory-form" class="row g-3">
+            <div class="col-12 col-lg-6">
+                <section class="card h-100" aria-labelledby="identity-title">
+                    <div class="card-body">
+                        <h2 id="identity-title" class="h4">Character</h2>
+                        <div class="mb-3">
+                            <label for="character-name" class="form-label">Name</label>
+                            <input id="character-name" name="name" class="form-control" type="text" maxlength="80" autocomplete="off" required>
+                        </div>
+                        <div class="mb-3">
+                            <fieldset>
+                                <legend class="form-label">Armor or clothing worn</legend>
+                                <div id="armor-choice-list" class="vstack gap-3"></div>
+                            </fieldset>
+                            <select id="armor-choice" name="armor" class="d-none" aria-hidden="true" tabindex="-1">
+                                <option value="unarmored">Clothing / unarmored</option>
+                                <option value="padded">Padded armor</option>
+                                <option value="leather">Leather armor</option>
+                                <option value="studded-leather">Studded leather armor</option>
+                                <option value="hide">Hide armor</option>
+                                <option value="chain-shirt">Chain shirt</option>
+                                <option value="scale-mail">Scale mail</option>
+                                <option value="breastplate">Breastplate</option>
+                                <option value="half-plate">Half plate</option>
+                                <option value="ring-mail">Ring mail</option>
+                                <option value="chain-mail">Chain mail</option>
+                                <option value="splint">Splint armor</option>
+                                <option value="plate">Plate armor</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input id="wearing-shield" name="shield" class="form-check-input" type="checkbox">
+                            <label class="form-check-label" for="wearing-shield">Wearing a shield (+2 AC)</label>
+                        </div>
+                        <p id="armor-class-preview" class="fw-semibold mb-2" aria-live="polite">Armor Class: 10</p>
+                        <p id="armor-proficiency-warning" class="text-warning-emphasis mb-0" role="status"></p>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-12">
+                <section class="card" aria-labelledby="starting-equipment-title">
+                    <div class="card-body">
+                        <h2 id="starting-equipment-title" class="h4">Starting equipment</h2>
+                        <p class="text-body-secondary">Choose a starting gear package for your class and background.</p>
+                        <div id="starting-equipment-choices" class="row g-3"></div>
+                        <div class="mt-4">
+                            <label for="class-weapon-choice" class="form-label">Choose an additional weapon by class proficiency (optional)</label>
+                            <select id="class-weapon-choice" class="form-select" disabled>
+                                <option value="">Loading class weapon options…</option>
+                            </select>
+                            <p id="class-weapon-status" class="small text-body-secondary mt-2 mb-0" role="status" aria-live="polite"></p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <section class="card h-100" aria-labelledby="backstory-title">
+                    <div class="card-body">
+                        <h2 id="backstory-title" class="h4">Personality &amp; history</h2>
+                        <div class="mb-3">
+                            <label for="personality-traits" class="form-label">Personality traits</label>
+                            <textarea id="personality-traits" name="personality" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="character-ideal" class="form-label">Ideal</label>
+                            <textarea id="character-ideal" name="ideal" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="character-bond" class="form-label">Bond</label>
+                            <textarea id="character-bond" name="bond" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="character-flaw" class="form-label">Flaw</label>
+                            <textarea id="character-flaw" name="flaw" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div>
+                            <label for="character-backstory" class="form-label">Backstory / notes</label>
+                            <textarea id="character-backstory" name="backstory" class="form-control" rows="4" maxlength="3000"></textarea>
+                        </div>
+                        <div class="mt-3">
+                            <label for="character-equipment" class="form-label">Additional equipment &amp; notes</label>
+                            <textarea id="character-equipment" name="equipment" class="form-control" rows="3" maxlength="1500" placeholder="List weapons, tools, keepsakes, and other gear"></textarea>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-12 d-flex flex-wrap justify-content-between gap-2">
+                <button id="back-to-ability-scores" class="btn btn-outline-secondary" type="button">Back to ability scores</button>
+                <button id="generate-character-sheet" class="btn btn-primary" type="submit">Generate character sheet</button>
+            </div>
+        </form>
+    </main>
+
+    <!-- [AI-Generated: Copilot SDK | 2026-11-06] Intent: Display generated character statistics, proficiencies, equipment, and backstory. -->
+    <main id="character-sheet-page" class="container-fluid d-none p-3 p-lg-4">
+        <header class="character-sheet-banner d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <p class="text-uppercase fw-semibold mb-1">Character sheet · Level 1</p>
+                <h1 id="sheet-character-name" class="h2 mb-1"></h1>
+                <p id="sheet-character-summary" class="text-body-secondary mb-0"></p>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="edit-character-details" class="btn btn-outline-secondary" type="button">Edit details</button>
+                <button id="print-character-sheet" class="btn btn-primary" type="button">Print sheet</button>
+            </div>
+        </header>
+        <div id="character-sheet-content" class="row g-3"></div>
+        <div class="mt-4">
+            <button id="edit-ability-scores" class="btn btn-outline-secondary" type="button">Edit ability scores</button>
+        </div>
+    </main>
+
+    <div class="modal fade" id="proficiency-modal" tabindex="-1" aria-labelledby="proficiency-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title fs-5" id="proficiency-modal-title">Choose your proficiencies</h2>
+                        <p class="text-body-secondary mb-0">Select the number of options listed in each group.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="choice-prompt" class="text-body-secondary">Your class, background, and species may grant proficiency choices.</p>
+                    <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Give background ability-score allocation its own section on the proficiency screen. -->
+                    <section id="background-ability-bonuses" class="d-none mb-4" aria-label="Background ability-score bonuses"></section>
+                    <div id="choice-groups" class="row g-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <span id="choice-status" class="me-auto text-body-secondary" role="status" aria-live="polite"></span>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+                    <button id="finish-button" type="button" class="btn btn-primary">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="point-buy-info" tabindex="-1" aria-labelledby="point-buy-info-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="point-buy-info-title">Ability Score Methods &amp; Rules</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h3 class="h6">Point Buy</h3>
+                    <p>Available Points - 27<br>Maximum Attribute Before Racial Bonus - 15<br>Minimum Attribute Before Racial Bonus - 8</p>
+                    <p>Point Buy gives you control over each ability score. Each increase costs points, and the total cost must use all 27 points.</p>
+                    <h3 class="h6">Standard Array</h3>
+                    <p>Standard Array uses the fixed scores 15, 14, 13, 12, 10, and 8. Assign each score to one ability; each score can be used once. It is quicker than Point Buy, but offers fewer combinations. No points are spent in this mode.</p>
+                    <p>Both methods set scores before any applicable character creation bonuses.</p>
+                    <h3 class="h6">Subraces and Variants</h3>
+                    <p>Subraces must be chosen for a race. Variants are considered optional. Currently Half-Elves, Humans, Orcs, and Tieflings have optional racial Variants. Other races that have no Subrace or Variant include Aarakocra, Bugbear, Centaur, Changeling, Dragonborn, Firbolg, Goblin, Goliath, Grung, Half-Orc, Hobgoblin, Kalashtar, Kenku, Kobold, Leonin, Lizardfolk, Locathah, Loxodon, Minotaur, Orc, Satyr, Simic Hybrid, Tabaxi, Tortle, Triton, Vedalken, Warforged, and Yuan-Ti Pureblood.</p>
+                    <h3 class="h6">Ask</h3>
+                    <p>Always ask your DM first before picking a race, especially a non-standard race or subrace. Some races, a Loxodon as an example, require the character to come from a different world setting than the traditional Forgotten Realms.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-10] Intent: Collect the hit point and class feature choices needed for a 2024 level advancement. -->
+    <div class="modal fade" id="level-up-modal" tabindex="-1" aria-labelledby="level-up-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <form id="level-up-form" class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title fs-5" id="level-up-modal-title">Level up</h2>
+                        <p id="level-up-summary" class="text-body-secondary mb-0"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="level-up-hp-method" class="form-label">Hit point increase</label>
+                        <select id="level-up-hp-method" class="form-select">
+                            <option value="fixed">Take the fixed value (half the Hit Die + 1)</option>
+                            <option value="roll">Roll the Hit Die</option>
+                        </select>
+                        <p id="level-up-hp-preview" class="form-text text-body-secondary mb-0"></p>
+                    </div>
+                    <div id="level-up-subclass-field" class="mb-3 d-none">
+                        <label for="level-up-subclass" class="form-label">Choose a subclass</label>
+                        <select id="level-up-subclass" class="form-select"></select>
+                    </div>
+                    <section id="level-up-asi-field" class="d-none">
+                        <label for="level-up-asi-choice" class="form-label">Ability Score Improvement</label>
+                        <select id="level-up-asi-choice" class="form-select mb-3">
+                            <option value="asi">Increase abilities (+2 to one or +1 to two)</option>
+                            <option value="feat">Choose a feat</option>
+                        </select>
+                        <div id="level-up-ability-choices">
+                            <label for="level-up-asi-method" class="form-label">Increase method</label>
+                            <select id="level-up-asi-method" class="form-select mb-2">
+                                <option value="two">+2 to one ability</option>
+                                <option value="split">+1 to two abilities</option>
+                            </select>
+                            <label for="level-up-ability-one" class="form-label">First ability</label>
+                            <select id="level-up-ability-one" class="form-select mb-2"></select>
+                            <label for="level-up-ability-two" class="form-label">Second ability for +1/+1</label>
+                            <select id="level-up-ability-two" class="form-select mb-2"></select>
+                        </div>
+                        <div id="level-up-feat-choices" class="d-none">
+                            <label for="level-up-feat" class="form-label">Feat from the 2024 API</label>
+                            <select id="level-up-feat" class="form-select mb-2"></select>
+                            <p id="level-up-feat-description" class="small text-body-secondary mb-0" aria-live="polite"></p>
+                        </div>
+                    </section>
+                    <p id="level-up-status" class="text-body-secondary mb-0" role="status" aria-live="polite"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="confirm-level-up" class="btn btn-primary" type="submit">Apply level up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- [AI-Assisted: Copilot SDK | 2026-11-11] Intent: Confirm removal of the latest class level and its recorded advancement choices. -->
+    <div class="modal fade" id="level-down-modal" tabindex="-1" aria-labelledby="level-down-modal-title" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="level-down-modal-title">Level down?</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="level-down-summary" class="mb-0"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="confirm-level-down" type="button" class="btn btn-primary">Remove level</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
 </html>
